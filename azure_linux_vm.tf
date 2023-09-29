@@ -35,7 +35,8 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
     name                       = "SSH"
     priority                   = 1001
     direction                  = "Inbound"
-    access                     = "Allow"
+    access                     = "Deny"
+    //access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
