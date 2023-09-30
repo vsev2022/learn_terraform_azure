@@ -3,8 +3,8 @@ resource "azurerm_resource_group" "example" {
   location = "West Europe"
 }
 
-resource "azurerm_virtual_network" "example_private_network" {
-  name                = "example-private-network"
+resource "azurerm_virtual_network" "example_VNET" {
+  name                = "example-VNET"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
@@ -13,8 +13,15 @@ resource "azurerm_virtual_network" "example_private_network" {
 resource "azurerm_subnet" "example_private_subnet" {
   name                 = "internal"
   resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.example_private_network.name
+  virtual_network_name = azurerm_virtual_network.example_VNET.name
   address_prefixes     = ["10.0.2.0/24"]
+}
+
+resource "azurerm_subnet" "example_public_subnet" {
+  name                 = "external"
+  resource_group_name  = azurerm_resource_group.example.name
+  virtual_network_name = azurerm_virtual_network.example_VNET.name
+  address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_public_ip" "example_public_ip" {
@@ -26,9 +33,8 @@ resource "azurerm_public_ip" "example_public_ip" {
   domain_name_label   = "test-publicvm-111"
 }
 
-# Create Network Security Group and rule
-resource "azurerm_network_security_group" "my_terraform_nsg" {
-  name                = "example_NetworkSecurityGroup"
+resource "azurerm_network_security_group" "allow_ssh_nsg" {
+  name                = "allow_ssh_nsg"
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
 
@@ -72,8 +78,13 @@ resource "azurerm_network_interface" "example_public_nic" {
   }
 }
 
-# Connect the security group to the network interface
-resource "azurerm_network_interface_security_group_association" "example" {
+resource "azurerm_network_interface_security_group_association" "public_nic_association" {
   network_interface_id      = azurerm_network_interface.example_public_nic.id
-  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
+  network_security_group_id = azurerm_network_security_group.allow_ssh_nsg.id
 }
+
+resource "azurerm_network_interface_security_group_association" "private_nic_association" {
+  network_interface_id      = azurerm_network_interface.example_private_nic.id
+  network_security_group_id = azurerm_network_security_group.allow_ssh_nsg.id
+}
+
